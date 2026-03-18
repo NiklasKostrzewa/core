@@ -8,18 +8,19 @@
  * Licensed under the MIT License
  */
 
-#include "mlir/Dialect/QCO/IR/QCODialect.h"
+#include "mlir/Dialect/QCO/IR/QCOOps.h"
 #include "mlir/Dialect/QCO/QCOUtils.h"
 #include "mlir/Dialect/Utils/Utils.h"
 
 #include <Eigen/Core>
-#include <cmath>
-#include <complex>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Support/LogicalResult.h>
+
+#include <cmath>
+#include <complex>
 #include <optional>
 #include <variant>
 
@@ -39,6 +40,19 @@ struct MergeSubsequentRYY final : OpRewritePattern<RYYOp> {
   LogicalResult matchAndRewrite(RYYOp op,
                                 PatternRewriter& rewriter) const override {
     return mergeTwoTargetOneParameter(op, rewriter);
+  }
+};
+
+/**
+ * @brief Merge subsequent RYY operations with swapped targets by adding their
+ * angles.
+ */
+struct MergeSwappedTargetsRYY final : OpRewritePattern<RYYOp> {
+  using OpRewritePattern::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(RYYOp op,
+                                PatternRewriter& rewriter) const override {
+    return mergeTwoTargetOneParameterWithSwappedTargets(op, rewriter);
   }
 };
 
@@ -66,7 +80,8 @@ void RYYOp::build(OpBuilder& odsBuilder, OperationState& odsState,
 
 void RYYOp::getCanonicalizationPatterns(RewritePatternSet& results,
                                         MLIRContext* context) {
-  results.add<MergeSubsequentRYY, RemoveTrivialRYY>(context);
+  results.add<MergeSubsequentRYY, MergeSwappedTargetsRYY, RemoveTrivialRYY>(
+      context);
 }
 
 std::optional<Eigen::Matrix4cd> RYYOp::getUnitaryMatrix() {

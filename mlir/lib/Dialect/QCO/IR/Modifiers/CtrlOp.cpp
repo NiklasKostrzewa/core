@@ -9,10 +9,8 @@
  */
 
 #include "mlir/Dialect/QCO/IR/QCODialect.h"
+#include "mlir/Dialect/QCO/IR/QCOOps.h"
 
-#include <cassert>
-#include <cstddef>
-#include <cstdint>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/SmallVector.h>
@@ -27,6 +25,10 @@
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
+
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 
 using namespace mlir;
@@ -131,7 +133,7 @@ struct ReduceCtrl final : OpRewritePattern<CtrlOp> {
     const OpBuilder::InsertionGuard guard(rewriter);
     rewriter.setInsertionPoint(gPhaseOp);
     auto pOp =
-        rewriter.create<POp>(gPhaseOp.getLoc(), arg, gPhaseOp.getTheta());
+        POp::create(rewriter, gPhaseOp.getLoc(), arg, gPhaseOp.getTheta());
 
     // Add the results of the POp to the yield operation
     auto yieldOp = llvm::cast<YieldOp>(op.getBody()->back());
@@ -155,12 +157,6 @@ UnitaryOpInterface CtrlOp::getBodyUnitary() {
   return llvm::cast<UnitaryOpInterface>(*(++getBody()->rbegin()));
 }
 
-size_t CtrlOp::getNumQubits() { return getNumTargets() + getNumControls(); }
-
-size_t CtrlOp::getNumTargets() { return getTargetsIn().size(); }
-
-size_t CtrlOp::getNumControls() { return getControlsIn().size(); }
-
 Value CtrlOp::getInputQubit(const size_t i) {
   const auto numControls = getNumControls();
   if (i < numControls) {
@@ -172,8 +168,6 @@ Value CtrlOp::getInputQubit(const size_t i) {
   llvm::reportFatalUsageError("Invalid qubit index");
 }
 
-OperandRange CtrlOp::getInputQubits() { return this->getOperands(); }
-
 Value CtrlOp::getOutputQubit(const size_t i) {
   const auto numControls = getNumControls();
   if (i < numControls) {
@@ -184,8 +178,6 @@ Value CtrlOp::getOutputQubit(const size_t i) {
   }
   llvm::reportFatalUsageError("Invalid qubit index");
 }
-
-ResultRange CtrlOp::getOutputQubits() { return this->getResults(); }
 
 Value CtrlOp::getInputTarget(const size_t i) {
   if (i >= getNumTargets()) {
@@ -241,32 +233,6 @@ Value CtrlOp::getOutputForInput(Value input) {
     }
   }
   llvm::reportFatalUsageError("Given qubit is not an input of the operation");
-}
-
-size_t CtrlOp::getNumParams() { return getBodyUnitary().getNumParams(); }
-
-Value CtrlOp::getParameter(const size_t i) {
-  return getBodyUnitary().getParameter(i);
-}
-
-void CtrlOp::build(OpBuilder& odsBuilder, OperationState& odsState,
-                   ValueRange controls, ValueRange targets,
-                   UnitaryOpInterface bodyUnitary) {
-  build(odsBuilder, odsState, controls, targets);
-  auto& block = odsState.regions.front()->emplaceBlock();
-
-  // Create block arguments and map targets to them
-  IRMapping mapping;
-  const auto qubitType = QubitType::get(odsBuilder.getContext());
-  for (const auto target : targets) {
-    mapping.map(target, block.addArgument(qubitType, odsState.location));
-  }
-
-  // Clone the operation using the mapping
-  const OpBuilder::InsertionGuard guard(odsBuilder);
-  odsBuilder.setInsertionPointToStart(&block);
-  auto* op = odsBuilder.clone(*bodyUnitary.getOperation(), mapping);
-  YieldOp::create(odsBuilder, odsState.location, op->getResults());
 }
 
 void CtrlOp::build(

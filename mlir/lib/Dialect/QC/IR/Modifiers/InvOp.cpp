@@ -8,12 +8,11 @@
  * Licensed under the MIT License
  */
 
-#include "mlir/Dialect/QC/IR/QCDialect.h"
+#include "mlir/Dialect/QC/IR/QCOps.h"
 
-#include <cstddef>
+#include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/TypeSwitch.h>
 #include <llvm/Support/Casting.h>
-#include <llvm/Support/ErrorHandling.h>
 #include <mlir/Dialect/Arith/IR/Arith.h>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/BuiltinAttributes.h>
@@ -22,6 +21,7 @@
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
+
 #include <numbers>
 
 using namespace mlir;
@@ -67,7 +67,8 @@ struct InlineSelfAdjoint final : OpRewritePattern<InvOp> {
                                 PatternRewriter& rewriter) const override {
     auto* innerOp = op.getBodyUnitary().getOperation();
 
-    if (!llvm::isa<IdOp, HOp, XOp, YOp, ZOp, SWAPOp, BarrierOp>(innerOp)) {
+    if (!llvm::isa<IdOp, HOp, XOp, YOp, ZOp, ECROp, SWAPOp, BarrierOp>(
+            innerOp)) {
       return failure();
     }
 
@@ -261,38 +262,6 @@ UnitaryOpInterface InvOp::getBodyUnitary() {
   // canonicalization. Thus, the only safe way to access the unitary operation
   // is to get the second operation from the back of the region.
   return llvm::cast<UnitaryOpInterface>(*(++getBody()->rbegin()));
-}
-
-size_t InvOp::getNumQubits() { return getBodyUnitary().getNumQubits(); }
-
-size_t InvOp::getNumTargets() { return getNumQubits(); }
-
-size_t InvOp::getNumControls() { return 0; }
-
-Value InvOp::getQubit(const size_t i) { return getBodyUnitary().getQubit(i); }
-
-Value InvOp::getTarget(const size_t i) { return getQubit(i); }
-
-Value InvOp::getControl([[maybe_unused]] const size_t i) {
-  llvm::reportFatalUsageError("Operation does not have controls");
-}
-
-size_t InvOp::getNumParams() { return getBodyUnitary().getNumParams(); }
-
-Value InvOp::getParameter(const size_t i) {
-  return getBodyUnitary().getParameter(i);
-}
-
-void InvOp::build(OpBuilder& odsBuilder, OperationState& odsState,
-                  UnitaryOpInterface bodyUnitary) {
-  const OpBuilder::InsertionGuard guard(odsBuilder);
-  auto* region = odsState.addRegion();
-  auto& block = region->emplaceBlock();
-
-  // Move the unitary op into the block
-  odsBuilder.setInsertionPointToStart(&block);
-  odsBuilder.clone(*bodyUnitary.getOperation());
-  YieldOp::create(odsBuilder, odsState.location);
 }
 
 void InvOp::build(OpBuilder& odsBuilder, OperationState& odsState,

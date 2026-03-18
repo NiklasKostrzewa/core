@@ -10,10 +10,8 @@
 
 #pragma once
 
-#include "mlir/Dialect/QC/IR/QCDialect.h"
-
-#include <cstdint>
 #include <llvm/ADT/DenseSet.h>
+#include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <mlir/IR/Builders.h>
@@ -22,6 +20,8 @@
 #include <mlir/IR/OwningOpRef.h>
 #include <mlir/IR/Value.h>
 #include <mlir/IR/ValueRange.h>
+
+#include <cstdint>
 #include <string>
 #include <variant>
 
@@ -74,21 +74,6 @@ public:
   //===--------------------------------------------------------------------===//
   // Constants
   //===--------------------------------------------------------------------===//
-
-  /**
-   * @brief Create a constant double value
-   * @param value The value to store in the constant
-   * @return The value produced by the constant operation
-   *
-   * @par Example:
-   * ```c++
-   * auto c = builder.doubleConstant(0.5);
-   * ```
-   * ```mlir
-   * %c = arith.constant 0.5 : f64
-   * ```
-   */
-  Value doubleConstant(double value);
 
   /**
    * @brief Create a constant integer value

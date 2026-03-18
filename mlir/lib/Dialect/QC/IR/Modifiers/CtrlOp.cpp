@@ -8,10 +8,10 @@
  * Licensed under the MIT License
  */
 
-#include "mlir/Dialect/QC/IR/QCDialect.h"
+#include "mlir/Dialect/QC/IR/QCOps.h"
 
-#include <cstddef>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/ErrorHandling.h>
 #include <mlir/IR/Builders.h>
@@ -21,6 +21,8 @@
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
+
+#include <cstddef>
 
 using namespace mlir;
 using namespace mlir::qc;
@@ -47,7 +49,7 @@ struct MergeNestedCtrl final : OpRewritePattern<CtrlOp> {
     // the outer one with the inner one's results
     const OpBuilder::InsertionGuard guard(rewriter);
     rewriter.setInsertionPoint(bodyUnitary);
-    auto innerUnitaryOp = bodyCtrlOp.getBodyUnitary().getOperation();
+    auto* innerUnitaryOp = bodyCtrlOp.getBodyUnitary().getOperation();
     rewriter.moveOpBefore(innerUnitaryOp, bodyUnitary);
     rewriter.replaceOp(bodyUnitary, innerUnitaryOp->getResults());
 
@@ -111,12 +113,6 @@ UnitaryOpInterface CtrlOp::getBodyUnitary() {
   return llvm::cast<UnitaryOpInterface>(*(++getBody()->rbegin()));
 }
 
-size_t CtrlOp::getNumQubits() { return getNumTargets() + getNumControls(); }
-
-size_t CtrlOp::getNumTargets() { return getBodyUnitary().getNumTargets(); }
-
-size_t CtrlOp::getNumControls() { return getControls().size(); }
-
 Value CtrlOp::getQubit(const size_t i) {
   const auto numControls = getNumControls();
   if (i < numControls) {
@@ -128,34 +124,11 @@ Value CtrlOp::getQubit(const size_t i) {
   llvm::reportFatalUsageError("Invalid qubit index");
 }
 
-Value CtrlOp::getTarget(const size_t i) {
-  return getBodyUnitary().getTarget(i);
-}
-
 Value CtrlOp::getControl(const size_t i) {
   if (i >= getNumControls()) {
     llvm::reportFatalUsageError("Control index out of bounds");
   }
   return getControls()[i];
-}
-
-size_t CtrlOp::getNumParams() { return getBodyUnitary().getNumParams(); }
-
-Value CtrlOp::getParameter(const size_t i) {
-  return getBodyUnitary().getParameter(i);
-}
-
-void CtrlOp::build(OpBuilder& odsBuilder, OperationState& odsState,
-                   ValueRange controls, UnitaryOpInterface bodyUnitary) {
-  const OpBuilder::InsertionGuard guard(odsBuilder);
-  odsState.addOperands(controls);
-  auto* region = odsState.addRegion();
-  auto& block = region->emplaceBlock();
-
-  // Move the unitary op into the block
-  odsBuilder.setInsertionPointToStart(&block);
-  odsBuilder.clone(*bodyUnitary.getOperation());
-  odsBuilder.create<YieldOp>(odsState.location);
 }
 
 void CtrlOp::build(OpBuilder& odsBuilder, OperationState& odsState,
@@ -168,7 +141,7 @@ void CtrlOp::build(OpBuilder& odsBuilder, OperationState& odsState,
 
   odsBuilder.setInsertionPointToStart(&block);
   bodyBuilder();
-  odsBuilder.create<YieldOp>(odsState.location);
+  YieldOp::create(odsBuilder, odsState.location);
 }
 
 LogicalResult CtrlOp::verify() {

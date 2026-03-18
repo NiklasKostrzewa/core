@@ -9,9 +9,9 @@
  */
 
 #include "mlir/Dialect/QCO/IR/QCODialect.h"
+#include "mlir/Dialect/QCO/IR/QCOOps.h"
 
 #include <Eigen/Core>
-#include <cstddef>
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/TypeSwitch.h>
@@ -26,6 +26,8 @@
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
+
+#include <cstddef>
 #include <numbers>
 #include <optional>
 
@@ -91,7 +93,8 @@ struct InlineSelfAdjoint final : OpRewritePattern<InvOp> {
                                 PatternRewriter& rewriter) const override {
     auto* innerOp = op.getBodyUnitary().getOperation();
 
-    if (!llvm::isa<IdOp, HOp, XOp, YOp, ZOp, SWAPOp, BarrierOp>(innerOp)) {
+    if (!llvm::isa<IdOp, HOp, XOp, YOp, ZOp, ECROp, SWAPOp, BarrierOp>(
+            innerOp)) {
       return failure();
     }
 
@@ -285,12 +288,6 @@ UnitaryOpInterface InvOp::getBodyUnitary() {
   return llvm::cast<UnitaryOpInterface>(*(++getBody()->rbegin()));
 }
 
-size_t InvOp::getNumQubits() { return getNumTargets(); }
-
-size_t InvOp::getNumTargets() { return getQubitsIn().size(); }
-
-size_t InvOp::getNumControls() { return 0; }
-
 Value InvOp::getInputQubit(const size_t i) {
   if (i >= getNumTargets()) {
     llvm::reportFatalUsageError("Qubit index out of bounds");
@@ -298,27 +295,11 @@ Value InvOp::getInputQubit(const size_t i) {
   return getQubitsIn()[i];
 }
 
-OperandRange InvOp::getInputQubits() { return this->getOperands(); }
-
 Value InvOp::getOutputQubit(const size_t i) {
   if (i >= getNumTargets()) {
     llvm::reportFatalUsageError("Qubit index out of bounds");
   }
   return getQubitsOut()[i];
-}
-
-ResultRange InvOp::getOutputQubits() { return this->getResults(); }
-
-Value InvOp::getInputTarget(const size_t i) { return getInputQubit(i); }
-
-Value InvOp::getOutputTarget(const size_t i) { return getOutputQubit(i); }
-
-Value InvOp::getInputControl([[maybe_unused]] const size_t i) {
-  llvm::reportFatalUsageError("Operation does not have controls");
-}
-
-Value InvOp::getOutputControl([[maybe_unused]] const size_t i) {
-  llvm::reportFatalUsageError("Operation does not have controls");
 }
 
 Value InvOp::getInputForOutput(Value output) {
@@ -337,31 +318,6 @@ Value InvOp::getOutputForInput(Value input) {
     }
   }
   llvm::reportFatalUsageError("Given qubit is not an input of the operation");
-}
-
-size_t InvOp::getNumParams() { return getBodyUnitary().getNumParams(); }
-
-Value InvOp::getParameter(const size_t i) {
-  return getBodyUnitary().getParameter(i);
-}
-
-void InvOp::build(OpBuilder& odsBuilder, OperationState& odsState,
-                  ValueRange qubits, UnitaryOpInterface bodyUnitary) {
-  build(odsBuilder, odsState, qubits);
-  auto& block = odsState.regions.front()->emplaceBlock();
-
-  // Create block arguments and map targets to them
-  IRMapping mapping;
-  const auto qubitType = QubitType::get(odsBuilder.getContext());
-  for (const auto target : qubits) {
-    mapping.map(target, block.addArgument(qubitType, odsState.location));
-  }
-
-  // Move the unitary op into the block
-  const OpBuilder::InsertionGuard guard(odsBuilder);
-  odsBuilder.setInsertionPointToStart(&block);
-  auto* op = odsBuilder.clone(*bodyUnitary.getOperation(), mapping);
-  YieldOp::create(odsBuilder, odsState.location, op->getResults());
 }
 
 void InvOp::build(

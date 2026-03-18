@@ -11,12 +11,10 @@
 #include "mlir/Conversion/QCToQIR/QCToQIR.h"
 
 #include "mlir/Dialect/QC/IR/QCDialect.h"
+#include "mlir/Dialect/QC/IR/QCOps.h"
+#include "mlir/Dialect/QIR/Utils/QIRMetadata.h"
 #include "mlir/Dialect/QIR/Utils/QIRUtils.h"
 
-#include <cassert>
-#include <cstddef>
-#include <cstdint>
-#include <iterator>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringMap.h>
@@ -46,6 +44,10 @@
 #include <mlir/Support/LLVM.h>
 #include <mlir/Support/LogicalResult.h>
 #include <mlir/Transforms/DialectConversion.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <iterator>
 #include <string>
 #include <utility>
 
@@ -83,7 +85,7 @@ struct LoweringState : QIRMetadata {
 
   /// Modifier information
   int64_t inCtrlOp = 0;
-  DenseMap<int64_t, SmallVector<Value>> posCtrls;
+  DenseMap<int64_t, SmallVector<Value>> controls;
 };
 
 /**
@@ -137,9 +139,9 @@ convertUnitaryToCallOp(QCOpType& op, QCOpAdaptorType& adaptor,
                        size_t numTargets, size_t numParams) {
   // Query state for modifier information
   const auto inCtrlOp = state.inCtrlOp;
-  const SmallVector<Value> posCtrls =
-      inCtrlOp != 0 ? state.posCtrls[inCtrlOp] : SmallVector<Value>{};
-  const size_t numCtrls = posCtrls.size();
+  const SmallVector<Value> controls =
+      inCtrlOp != 0 ? state.controls[inCtrlOp] : SmallVector<Value>{};
+  const size_t numCtrls = controls.size();
 
   // Define argument types
   SmallVector<Type> argumentTypes;
@@ -169,12 +171,12 @@ convertUnitaryToCallOp(QCOpType& op, QCOpAdaptorType& adaptor,
 
   SmallVector<Value> operands;
   operands.reserve(numParams + numCtrls + numTargets);
-  operands.append(posCtrls.begin(), posCtrls.end());
+  operands.append(controls.begin(), controls.end());
   operands.append(adaptor.getOperands().begin(), adaptor.getOperands().end());
 
   // Clean up modifier information
   if (inCtrlOp != 0) {
-    state.posCtrls.erase(inCtrlOp);
+    state.controls.erase(inCtrlOp);
     state.inCtrlOp--;
   }
 
@@ -417,8 +419,9 @@ struct ConvertQCMeasureQIR final : StatefulOpConversionPattern<MeasureOp> {
         // Allocate the entire register as static results
         for (int64_t i = 0; i < registerSize; ++i) {
           Value val{};
-          if (const auto it = ptrMap.find(numResults + i); it != ptrMap.end()) {
-            val = it->second;
+          if (const auto ptrIt = ptrMap.find(numResults + i);
+              ptrIt != ptrMap.end()) {
+            val = ptrIt->second;
           } else {
             val = createPointerFromIndex(rewriter, op.getLoc(), numResults + i);
             ptrMap[numResults + i] = val;
@@ -454,8 +457,8 @@ struct ConvertQCMeasureQIR final : StatefulOpConversionPattern<MeasureOp> {
         getOrCreateFunctionDeclaration(rewriter, op, QIR_MEASURE, fnSignature);
 
     // Create CallOp and replace qc.measure with result pointer
-    rewriter.create<LLVM::CallOp>(op.getLoc(), fnDecl,
-                                  ValueRange{adaptor.getQubit(), resultValue});
+    LLVM::CallOp::create(rewriter, op.getLoc(), fnDecl,
+                         ValueRange{adaptor.getQubit(), resultValue});
     rewriter.replaceOp(op, resultValue);
     return success();
   }
@@ -553,7 +556,7 @@ struct ConvertQCGPhaseOpQIR final : StatefulOpConversionPattern<GPhaseOp> {
       auto& state = getState();                                                \
       const auto inCtrlOp = state.inCtrlOp;                                    \
       const size_t numCtrls =                                                  \
-          inCtrlOp != 0 ? state.posCtrls[inCtrlOp].size() : 0;                 \
+          inCtrlOp != 0 ? state.controls[inCtrlOp].size() : 0;                 \
       const auto fnName = getFnName##OP_NAME_BIG(numCtrls);                    \
       return convertUnitaryToCallOp(op, adaptor, rewriter, getContext(),       \
                                     state, fnName, 1, 0);                      \
@@ -601,7 +604,7 @@ DEFINE_ONE_TARGET_ZERO_PARAMETER(SXdgOp, SXDG, sxdg, sxdg)
       auto& state = getState();                                                \
       const auto inCtrlOp = state.inCtrlOp;                                    \
       const size_t numCtrls =                                                  \
-          inCtrlOp != 0 ? state.posCtrls[inCtrlOp].size() : 0;                 \
+          inCtrlOp != 0 ? state.controls[inCtrlOp].size() : 0;                 \
       const auto fnName = getFnName##OP_NAME_BIG(numCtrls);                    \
       return convertUnitaryToCallOp(op, adaptor, rewriter, getContext(),       \
                                     state, fnName, 1, 1);                      \
@@ -642,7 +645,7 @@ DEFINE_ONE_TARGET_ONE_PARAMETER(POp, P, p, p, theta)
       auto& state = getState();                                                \
       const auto inCtrlOp = state.inCtrlOp;                                    \
       const size_t numCtrls =                                                  \
-          inCtrlOp != 0 ? state.posCtrls[inCtrlOp].size() : 0;                 \
+          inCtrlOp != 0 ? state.controls[inCtrlOp].size() : 0;                 \
       const auto fnName = getFnName##OP_NAME_BIG(numCtrls);                    \
       return convertUnitaryToCallOp(op, adaptor, rewriter, getContext(),       \
                                     state, fnName, 1, 2);                      \
@@ -681,7 +684,7 @@ DEFINE_ONE_TARGET_TWO_PARAMETER(U2Op, U2, u2, u2, phi, lambda)
       auto& state = getState();                                                \
       const auto inCtrlOp = state.inCtrlOp;                                    \
       const size_t numCtrls =                                                  \
-          inCtrlOp != 0 ? state.posCtrls[inCtrlOp].size() : 0;                 \
+          inCtrlOp != 0 ? state.controls[inCtrlOp].size() : 0;                 \
       const auto fnName = getFnName##OP_NAME_BIG(numCtrls);                    \
       return convertUnitaryToCallOp<OP_CLASS>(                                 \
           op, adaptor, rewriter, getContext(), state, fnName, 1, 3);           \
@@ -719,7 +722,7 @@ DEFINE_ONE_TARGET_THREE_PARAMETER(UOp, U, u, u3)
       auto& state = getState();                                                \
       const auto inCtrlOp = state.inCtrlOp;                                    \
       const size_t numCtrls =                                                  \
-          inCtrlOp != 0 ? state.posCtrls[inCtrlOp].size() : 0;                 \
+          inCtrlOp != 0 ? state.controls[inCtrlOp].size() : 0;                 \
       const auto fnName = getFnName##OP_NAME_BIG(numCtrls);                    \
       return convertUnitaryToCallOp(op, adaptor, rewriter, getContext(),       \
                                     state, fnName, 2, 0);                      \
@@ -760,7 +763,7 @@ DEFINE_TWO_TARGET_ZERO_PARAMETER(ECROp, ECR, ecr, ecr)
       auto& state = getState();                                                \
       const auto inCtrlOp = state.inCtrlOp;                                    \
       const size_t numCtrls =                                                  \
-          inCtrlOp != 0 ? state.posCtrls[inCtrlOp].size() : 0;                 \
+          inCtrlOp != 0 ? state.controls[inCtrlOp].size() : 0;                 \
       const auto fnName = getFnName##OP_NAME_BIG(numCtrls);                    \
       return convertUnitaryToCallOp(op, adaptor, rewriter, getContext(),       \
                                     state, fnName, 2, 1);                      \
@@ -802,7 +805,7 @@ DEFINE_TWO_TARGET_ONE_PARAMETER(RZZOp, RZZ, rzz, rzz, theta)
       auto& state = getState();                                                \
       const auto inCtrlOp = state.inCtrlOp;                                    \
       const size_t numCtrls =                                                  \
-          inCtrlOp != 0 ? state.posCtrls[inCtrlOp].size() : 0;                 \
+          inCtrlOp != 0 ? state.controls[inCtrlOp].size() : 0;                 \
       const auto fnName = getFnName##OP_NAME_BIG(numCtrls);                    \
       return convertUnitaryToCallOp(op, adaptor, rewriter, getContext(),       \
                                     state, fnName, 2, 2);                      \
@@ -844,9 +847,9 @@ struct ConvertQCCtrlQIR final : StatefulOpConversionPattern<CtrlOp> {
     // Update modifier information
     auto& state = getState();
     state.inCtrlOp++;
-    const SmallVector<Value> posCtrls(adaptor.getControls().begin(),
+    const SmallVector<Value> controls(adaptor.getControls().begin(),
                                       adaptor.getControls().end());
-    state.posCtrls[state.inCtrlOp] = posCtrls;
+    state.controls[state.inCtrlOp] = controls;
 
     // Inline region and remove operation
     rewriter.inlineBlockBefore(&op.getRegion().front(), op->getBlock(),
@@ -959,13 +962,13 @@ struct QCToQIR final : impl::QCToQIRBase<QCToQIR> {
 
     // Add unconditional jumps between blocks
     builder.setInsertionPointToEnd(entryBlock);
-    builder.create<LLVM::BrOp>(main->getLoc(), bodyBlock);
+    LLVM::BrOp::create(builder, main->getLoc(), bodyBlock);
 
     builder.setInsertionPointToEnd(bodyBlock);
-    builder.create<LLVM::BrOp>(main->getLoc(), measurementsBlock);
+    LLVM::BrOp::create(builder, main->getLoc(), measurementsBlock);
 
     builder.setInsertionPointToEnd(measurementsBlock);
-    builder.create<LLVM::BrOp>(main->getLoc(), outputBlock);
+    LLVM::BrOp::create(builder, main->getLoc(), outputBlock);
   }
 
   /**
@@ -987,8 +990,8 @@ struct QCToQIR final : impl::QCToQIRBase<QCToQIR> {
 
     // Create a zero (null) pointer for the initialize call
     builder.setInsertionPointToStart(&firstBlock);
-    auto zeroOp = builder.create<LLVM::ZeroOp>(main->getLoc(),
-                                               LLVM::LLVMPointerType::get(ctx));
+    auto zeroOp = LLVM::ZeroOp::create(builder, main->getLoc(),
+                                       LLVM::LLVMPointerType::get(ctx));
 
     // Insert the initialize call before the jump to main block
     const auto insertPoint = std::prev(firstBlock.getOperations().end(), 1);
@@ -1002,13 +1005,14 @@ struct QCToQIR final : impl::QCToQIRBase<QCToQIR> {
       builder.setInsertionPointToEnd(moduleOp.getBody());
       auto fnSignature = LLVM::LLVMFunctionType::get(
           LLVM::LLVMVoidType::get(ctx), LLVM::LLVMPointerType::get(ctx));
-      fnDecl = builder.create<LLVM::LLVMFuncOp>(main->getLoc(), QIR_INITIALIZE,
-                                                fnSignature);
+      fnDecl = LLVM::LLVMFuncOp::create(builder, main->getLoc(), QIR_INITIALIZE,
+                                        fnSignature);
     }
 
     // Create the initialization call
-    builder.create<LLVM::CallOp>(main->getLoc(), cast<LLVM::LLVMFuncOp>(fnDecl),
-                                 ValueRange{zeroOp->getResult(0)});
+    LLVM::CallOp::create(builder, main->getLoc(),
+                         cast<LLVM::LLVMFuncOp>(fnDecl),
+                         ValueRange{zeroOp->getResult(0)});
   }
 
   /**
@@ -1098,12 +1102,12 @@ struct QCToQIR final : impl::QCToQIRBase<QCToQIR> {
 
       const auto arraySize = measurements.size();
       auto arrayLabelOp = createResultLabel(builder, main, registerName);
-      auto arraySizeConst = builder.create<LLVM::ConstantOp>(
-          main->getLoc(),
+      auto arraySizeConst = LLVM::ConstantOp::create(
+          builder, main->getLoc(),
           builder.getI64IntegerAttr(static_cast<int64_t>(arraySize)));
 
-      builder.create<LLVM::CallOp>(
-          main->getLoc(), arrayRecordDecl,
+      LLVM::CallOp::create(
+          builder, main->getLoc(), arrayRecordDecl,
           ValueRange{arraySizeConst.getResult(), arrayLabelOp.getResult()});
 
       // Create result_record_output calls for each measurement
@@ -1113,9 +1117,8 @@ struct QCToQIR final : impl::QCToQIRBase<QCToQIR> {
             registerName.str() + std::to_string(regIdx) + "r";
         auto resultLabelOp = createResultLabel(builder, main, resultLabel);
 
-        builder.create<LLVM::CallOp>(
-            main->getLoc(), resultRecordDecl,
-            ValueRange{resultPtr, resultLabelOp.getResult()});
+        LLVM::CallOp::create(builder, main->getLoc(), resultRecordDecl,
+                             ValueRange{resultPtr, resultLabelOp.getResult()});
       }
     }
   }

@@ -11,9 +11,9 @@
 #include "mlir/Dialect/QC/Builder/QCProgramBuilder.h"
 
 #include "mlir/Dialect/QC/IR/QCDialect.h"
+#include "mlir/Dialect/QC/IR/QCOps.h"
 #include "mlir/Dialect/Utils/Utils.h"
 
-#include <cstdint>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/ADT/STLFunctionalExtras.h>
 #include <llvm/ADT/SmallVector.h>
@@ -27,6 +27,8 @@
 #include <mlir/IR/OwningOpRef.h>
 #include <mlir/IR/Value.h>
 #include <mlir/IR/ValueRange.h>
+
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <variant>
@@ -57,11 +59,6 @@ void QCProgramBuilder::initialize() {
   // Create entry block and set insertion point
   auto& entryBlock = mainFunc.getBody().emplaceBlock();
   setInsertionPointToStart(&entryBlock);
-}
-
-Value QCProgramBuilder::doubleConstant(const double value) {
-  checkFinalized();
-  return arith::ConstantOp::create(*this, getF64FloatAttr(value)).getResult();
 }
 
 Value QCProgramBuilder::intConstant(const int64_t value) {

@@ -9,6 +9,7 @@
 file(GLOB_RECURSE MODIFIERS "${CMAKE_CURRENT_SOURCE_DIR}/Modifiers/*.cpp")
 file(GLOB_RECURSE OPERATIONS "${CMAKE_CURRENT_SOURCE_DIR}/Operations/*.cpp")
 file(GLOB_RECURSE QUBIT_MANAGEMENT "${CMAKE_CURRENT_SOURCE_DIR}/QubitManagement/*.cpp")
+file(GLOB_RECURSE SCF "${CMAKE_CURRENT_SOURCE_DIR}/SCF/*.cpp")
 
 add_mlir_dialect_library(
   MLIRQCODialect
@@ -16,17 +17,19 @@ add_mlir_dialect_library(
   ${MODIFIERS}
   ${OPERATIONS}
   ${QUBIT_MANAGEMENT}
+  ${SCF}
   ADDITIONAL_HEADER_DIRS
   ${PROJECT_SOURCE_DIR}/mlir/include/mlir/Dialect/QCO
   DEPENDS
   MLIRQCOOpsIncGen
   MLIRQCOInterfacesIncGen
   LINK_LIBS
-  PUBLIC
+  PRIVATE
   MLIRIR
   MLIRArithDialect
   MLIRInferTypeOpInterface
   MLIRSideEffectInterfaces
+  PUBLIC
   Eigen3::Eigen
   DISABLE_INSTALL)
 

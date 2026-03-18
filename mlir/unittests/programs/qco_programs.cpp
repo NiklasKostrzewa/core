@@ -12,10 +12,11 @@
 
 #include "mlir/Dialect/QCO/Builder/QCOProgramBuilder.h"
 
-#include "llvm/ADT/STLExtras.h"
-#include "llvm/ADT/SmallVector.h"
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/ADT/SmallVector.h>
 
 #include <numbers>
+#include <tuple>
 
 namespace mlir::qco {
 
@@ -240,6 +241,12 @@ void inverseMultipleControlledX(QCOProgramBuilder& b) {
   });
 }
 
+void twoX(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.x(q[0]);
+  q[0] = b.x(q[0]);
+}
+
 void y(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
   b.y(q[0]);
@@ -287,6 +294,12 @@ void inverseMultipleControlledY(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+
+void twoY(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.y(q[0]);
+  q[0] = b.y(q[0]);
 }
 
 void z(QCOProgramBuilder& b) {
@@ -338,6 +351,12 @@ void inverseMultipleControlledZ(QCOProgramBuilder& b) {
   });
 }
 
+void twoZ(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.z(q[0]);
+  q[0] = b.z(q[0]);
+}
+
 void h(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
   b.h(q[0]);
@@ -385,6 +404,12 @@ void inverseMultipleControlledH(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+
+void twoH(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.h(q[0]);
+  q[0] = b.h(q[0]);
 }
 
 void s(QCOProgramBuilder& b) {
@@ -436,6 +461,18 @@ void inverseMultipleControlledS(QCOProgramBuilder& b) {
   });
 }
 
+void sThenSdg(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.s(q[0]);
+  q[0] = b.sdg(q[0]);
+}
+
+void twoS(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.s(q[0]);
+  q[0] = b.s(q[0]);
+}
+
 void sdg(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
   b.sdg(q[0]);
@@ -483,6 +520,18 @@ void inverseMultipleControlledSdg(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+
+void sdgThenS(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.sdg(q[0]);
+  q[0] = b.s(q[0]);
+}
+
+void twoSdg(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.sdg(q[0]);
+  q[0] = b.sdg(q[0]);
 }
 
 void t_(QCOProgramBuilder& b) {
@@ -534,6 +583,18 @@ void inverseMultipleControlledT(QCOProgramBuilder& b) {
   });
 }
 
+void tThenTdg(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.t(q[0]);
+  q[0] = b.tdg(q[0]);
+}
+
+void twoT(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.t(q[0]);
+  q[0] = b.t(q[0]);
+}
+
 void tdg(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
   b.tdg(q[0]);
@@ -581,6 +642,18 @@ void inverseMultipleControlledTdg(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+
+void tdgThenT(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.tdg(q[0]);
+  q[0] = b.t(q[0]);
+}
+
+void twoTdg(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.tdg(q[0]);
+  q[0] = b.tdg(q[0]);
 }
 
 void sx(QCOProgramBuilder& b) {
@@ -632,6 +705,18 @@ void inverseMultipleControlledSx(QCOProgramBuilder& b) {
   });
 }
 
+void sxThenSxdg(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.sx(q[0]);
+  q[0] = b.sxdg(q[0]);
+}
+
+void twoSx(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.sx(q[0]);
+  q[0] = b.sx(q[0]);
+}
+
 void sxdg(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
   b.sxdg(q[0]);
@@ -679,6 +764,18 @@ void inverseMultipleControlledSxdg(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+
+void sxdgThenSx(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.sxdg(q[0]);
+  q[0] = b.sx(q[0]);
+}
+
+void twoSxdg(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.sxdg(q[0]);
+  q[0] = b.sxdg(q[0]);
 }
 
 void rx(QCOProgramBuilder& b) {
@@ -730,6 +827,17 @@ void inverseMultipleControlledRx(QCOProgramBuilder& b) {
   });
 }
 
+void twoRxOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.rx(0.123, q[0]);
+  q[0] = b.rx(-0.123, q[0]);
+}
+
+void rxPiOver2(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.rx(std::numbers::pi / 2, q[0]);
+}
+
 void ry(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
   b.ry(0.456, q[0]);
@@ -777,6 +885,16 @@ void inverseMultipleControlledRy(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+void twoRyOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.ry(0.456, q[0]);
+  q[0] = b.ry(-0.456, q[0]);
+}
+
+void ryPiOver2(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.ry(std::numbers::pi / 2, q[0]);
 }
 
 void rz(QCOProgramBuilder& b) {
@@ -828,6 +946,12 @@ void inverseMultipleControlledRz(QCOProgramBuilder& b) {
   });
 }
 
+void twoRzOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.rz(0.789, q[0]);
+  q[0] = b.rz(-0.789, q[0]);
+}
+
 void p(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
   b.p(0.123, q[0]);
@@ -875,6 +999,12 @@ void inverseMultipleControlledP(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+
+void twoPOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.p(0.123, q[0]);
+  q[0] = b.p(-0.123, q[0]);
 }
 
 void r(QCOProgramBuilder& b) {
@@ -925,6 +1055,16 @@ void inverseMultipleControlledR(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+
+void canonicalizeRToRx(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.r(0.123, 0., q[0]);
+}
+
+void canonicalizeRToRy(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  q[0] = b.r(0.456, std::numbers::pi / 2, q[0]);
 }
 
 void u2(QCOProgramBuilder& b) {
@@ -979,6 +1119,19 @@ void inverseMultipleControlledU2(QCOProgramBuilder& b) {
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
 }
+void canonicalizeU2ToH(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.u2(0., std::numbers::pi, q[0]);
+}
+
+void canonicalizeU2ToRx(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.u2(-std::numbers::pi / 2, std::numbers::pi / 2, q[0]);
+}
+void canonicalizeU2ToRy(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.u2(0., 0., q[0]);
+}
 
 void u(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
@@ -1028,6 +1181,26 @@ void inverseMultipleControlledU(QCOProgramBuilder& b) {
     return llvm::to_vector(
         llvm::concat<mlir::Value>(controlsOut, mlir::ValueRange{targetOut}));
   });
+}
+
+void canonicalizeUToP(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.u(0., 0., 0.123, q[0]);
+}
+
+void canonicalizeUToRx(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.u(0.123, -std::numbers::pi / 2, std::numbers::pi / 2, q[0]);
+}
+
+void canonicalizeUToRy(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.u(0.456, 0., 0., q[0]);
+}
+
+void canonicalizeUToU2(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.u(std::numbers::pi / 2, 0.234, 0.567, q[0]);
 }
 
 void swap(QCOProgramBuilder& b) {
@@ -1081,6 +1254,18 @@ void inverseMultipleControlledSwap(QCOProgramBuilder& b) {
                                               targetsOut.second};
     return llvm::to_vector(llvm::concat<mlir::Value>(controlsOut, targets));
   });
+}
+
+void twoSwap(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.swap(q[0], q[1]);
+  std::tie(q[0], q[1]) = b.swap(q[0], q[1]);
+}
+
+void twoSwapSwappedTargets(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.swap(q[0], q[1]);
+  std::tie(q[1], q[0]) = b.swap(q[1], q[0]);
 }
 
 void iswap(QCOProgramBuilder& b) {
@@ -1189,6 +1374,18 @@ void inverseMultipleControlledDcx(QCOProgramBuilder& b) {
   });
 }
 
+void twoDcx(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.dcx(q[0], q[1]);
+  std::tie(q[0], q[1]) = b.dcx(q[0], q[1]);
+}
+
+void twoDcxSwappedTargets(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.dcx(q[0], q[1]);
+  std::tie(q[1], q[0]) = b.dcx(q[1], q[0]);
+}
+
 void ecr(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(2);
   b.ecr(q[0], q[1]);
@@ -1240,6 +1437,12 @@ void inverseMultipleControlledEcr(QCOProgramBuilder& b) {
                                               targetsOut.second};
     return llvm::to_vector(llvm::concat<mlir::Value>(controlsOut, targets));
   });
+}
+
+void twoEcr(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.ecr(q[0], q[1]);
+  std::tie(q[0], q[1]) = b.ecr(q[0], q[1]);
 }
 
 void rxx(QCOProgramBuilder& b) {
@@ -1305,6 +1508,32 @@ void fourControlledRxx(QCOProgramBuilder& b) {
   b.mcrxx(0.123, {q[0], q[1], q[2], q[3]}, q[4], q[5]);
 }
 
+void twoRxx(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  // 0.045 + 0.078 = 0.123
+  std::tie(q[0], q[1]) = b.rxx(0.045, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.rxx(0.078, q[0], q[1]);
+}
+
+void twoRxxSwappedTargets(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  // 0.045 + 0.078 = 0.123
+  std::tie(q[0], q[1]) = b.rxx(0.045, q[0], q[1]);
+  std::tie(q[1], q[0]) = b.rxx(0.078, q[1], q[0]);
+}
+
+void twoRxxOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.rxx(0.123, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.rxx(-0.123, q[0], q[1]);
+}
+
+void twoRxxOppositePhaseSwappedTargets(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.rxx(0.123, q[0], q[1]);
+  std::tie(q[1], q[0]) = b.rxx(-0.123, q[1], q[0]);
+}
+
 void ryy(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(2);
   b.ryy(0.123, q[0], q[1]);
@@ -1356,6 +1585,32 @@ void inverseMultipleControlledRyy(QCOProgramBuilder& b) {
                                               targetsOut.second};
     return llvm::to_vector(llvm::concat<mlir::Value>(controlsOut, targets));
   });
+}
+
+void twoRyy(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  // 0.045 + 0.078 = 0.123
+  std::tie(q[0], q[1]) = b.ryy(0.045, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.ryy(0.078, q[0], q[1]);
+}
+
+void twoRyyOppositePhaseSwappedTargets(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.ryy(0.123, q[0], q[1]);
+  std::tie(q[1], q[0]) = b.ryy(-0.123, q[1], q[0]);
+}
+
+void twoRyyOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.ryy(0.123, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.ryy(-0.123, q[0], q[1]);
+}
+
+void twoRyySwappedTargets(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  // 0.045 + 0.078 = 0.123
+  std::tie(q[0], q[1]) = b.ryy(0.045, q[0], q[1]);
+  std::tie(q[1], q[0]) = b.ryy(0.078, q[1], q[0]);
 }
 
 void rzx(QCOProgramBuilder& b) {
@@ -1411,6 +1666,12 @@ void inverseMultipleControlledRzx(QCOProgramBuilder& b) {
   });
 }
 
+void twoRzxOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.rzx(0.123, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.rzx(-0.123, q[0], q[1]);
+}
+
 void rzz(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(2);
   b.rzz(0.123, q[0], q[1]);
@@ -1462,6 +1723,32 @@ void inverseMultipleControlledRzz(QCOProgramBuilder& b) {
                                               targetsOut.second};
     return llvm::to_vector(llvm::concat<mlir::Value>(controlsOut, targets));
   });
+}
+
+void twoRzz(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  // 0.045 + 0.078 = 0.123
+  std::tie(q[0], q[1]) = b.rzz(0.045, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.rzz(0.078, q[0], q[1]);
+}
+
+void twoRzzSwappedTargets(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  // 0.045 + 0.078 = 0.123
+  std::tie(q[0], q[1]) = b.rzz(0.045, q[0], q[1]);
+  std::tie(q[1], q[0]) = b.rzz(0.078, q[1], q[0]);
+}
+
+void twoRzzOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.rzz(0.123, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.rzz(-0.123, q[0], q[1]);
+}
+
+void twoRzzOppositePhaseSwappedTargets(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.rzz(0.123, q[0], q[1]);
+  std::tie(q[1], q[0]) = b.rzz(-0.123, q[1], q[0]);
 }
 
 void xxPlusYY(QCOProgramBuilder& b) {
@@ -1518,6 +1805,12 @@ void inverseMultipleControlledXxPlusYY(QCOProgramBuilder& b) {
   });
 }
 
+void twoXxPlusYYOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.xx_plus_yy(0.123, 0.456, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.xx_plus_yy(-0.123, 0.456, q[0], q[1]);
+}
+
 void xxMinusYY(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(2);
   b.xx_minus_yy(0.123, 0.456, q[0], q[1]);
@@ -1572,6 +1865,12 @@ void inverseMultipleControlledXxMinusYY(QCOProgramBuilder& b) {
   });
 }
 
+void twoXxMinusYYOppositePhase(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  std::tie(q[0], q[1]) = b.xx_minus_yy(0.123, 0.456, q[0], q[1]);
+  std::tie(q[0], q[1]) = b.xx_minus_yy(-0.123, 0.456, q[0], q[1]);
+}
+
 void barrier(QCOProgramBuilder& b) {
   auto q = b.allocQubitRegister(1);
   b.barrier(q[0]);
@@ -1599,6 +1898,14 @@ void inverseBarrier(QCOProgramBuilder& b) {
   b.inv({q[0]}, [&](mlir::ValueRange qubits) {
     return llvm::SmallVector<mlir::Value>{b.barrier(qubits[0])};
   });
+}
+
+void twoBarrier(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  auto b1 = b.barrier({q[0], q[1]});
+  q[0] = b1[0];
+  q[1] = b1[1];
+  b.barrier({q[0], q[1]});
 }
 
 void trivialCtrl(QCOProgramBuilder& b) {
@@ -1696,10 +2003,10 @@ void tripleNestedInv(QCOProgramBuilder& b) {
     auto inner1 =
         b.inv({qubits[0], qubits[1]}, [&](mlir::ValueRange innerQubits) {
           auto inner2 = b.inv({innerQubits[0], innerQubits[1]},
-                              [&](mlir::ValueRange innerInnerQubbits) {
+                              [&](mlir::ValueRange innerInnerQubits) {
                                 auto [q0, q1] =
-                                    b.rxx(-0.123, innerInnerQubbits[0],
-                                          innerInnerQubbits[1]);
+                                    b.rxx(-0.123, innerInnerQubits[0],
+                                          innerInnerQubits[1]);
                                 return llvm::SmallVector<mlir::Value>{q0, q1};
                               });
           return llvm::SmallVector<mlir::Value>{inner2};
@@ -1724,4 +2031,106 @@ void invCtrlSandwich(QCOProgramBuilder& b) {
   });
 }
 
+void simpleIf(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  auto q0 = b.h(q[0]);
+  auto [measuredQubit, measureResult] = b.measure(q0);
+  b.qcoIf(measureResult, measuredQubit, [&](mlir::ValueRange qubits) {
+    auto innerQubit = b.x(qubits[0]);
+    return llvm::SmallVector<mlir::Value>{innerQubit};
+  });
+}
+
+void ifTwoQubits(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(2);
+  auto q0 = b.h(q[0]);
+  auto [measuredQubit, measureResult] = b.measure(q0);
+  b.qcoIf(measureResult, {measuredQubit, q[1]}, [&](mlir::ValueRange qubits) {
+    auto innerQubit0 = b.x(qubits[0]);
+    auto innerQubit1 = b.x(qubits[1]);
+    return llvm::SmallVector<mlir::Value>{innerQubit0, innerQubit1};
+  });
+}
+
+void ifElse(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  auto q0 = b.h(q[0]);
+  auto [measuredQubit, measureResult] = b.measure(q0);
+  b.qcoIf(
+      measureResult, {measuredQubit},
+      [&](mlir::ValueRange qubits) {
+        auto innerQubit = b.x(qubits[0]);
+        return llvm::SmallVector<mlir::Value>{innerQubit};
+      },
+      [&](mlir::ValueRange qubits) {
+        auto innerQubit = b.z(qubits[0]);
+        return llvm::SmallVector<mlir::Value>{innerQubit};
+      });
+}
+
+void constantTrueIf(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.qcoIf(
+      true, q,
+      [&](mlir::ValueRange qubits) {
+        auto innerQubit = b.x(qubits[0]);
+        return llvm::SmallVector<mlir::Value>{innerQubit};
+      },
+      [&](mlir::ValueRange qubits) {
+        auto innerQubit = b.z(qubits[0]);
+        return llvm::SmallVector<mlir::Value>{innerQubit};
+      });
+}
+
+void constantFalseIf(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  b.qcoIf(
+      false, q,
+      [&](mlir::ValueRange qubits) {
+        auto innerQubit = b.x(qubits[0]);
+        return llvm::SmallVector<mlir::Value>{innerQubit};
+      },
+      [&](mlir::ValueRange qubits) {
+        auto innerQubit = b.z(qubits[0]);
+        return llvm::SmallVector<mlir::Value>{innerQubit};
+      });
+}
+
+void nestedTrueIf(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  auto q0 = b.h(q[0]);
+  auto [measuredQubit, measureResult] = b.measure(q0);
+  b.qcoIf(measureResult, measuredQubit, [&](mlir::ValueRange outerQubits) {
+    auto innerResult =
+        b.qcoIf(measureResult, outerQubits, [&](mlir::ValueRange innerQubits) {
+          auto innerQubit = b.x(innerQubits[0]);
+          return llvm::SmallVector<mlir::Value>{innerQubit};
+        });
+    return llvm::to_vector(innerResult);
+  });
+}
+
+void nestedFalseIf(QCOProgramBuilder& b) {
+  auto q = b.allocQubitRegister(1);
+  auto q0 = b.h(q[0]);
+  auto [measuredQubit, measureResult] = b.measure(q0);
+  b.qcoIf(
+      measureResult, measuredQubit,
+      [&](mlir::ValueRange qubits) {
+        auto innerQubit = b.x(qubits[0]);
+        return llvm::SmallVector<mlir::Value>{innerQubit};
+      },
+      [&](mlir::ValueRange outerQubits) {
+        auto innerResult = b.qcoIf(
+            measureResult, outerQubits,
+            [&](mlir::ValueRange innerQubits) {
+              return llvm::to_vector(innerQubits);
+            },
+            [&](mlir::ValueRange innerQubits) {
+              auto innerQubit = b.z(innerQubits[0]);
+              return llvm::SmallVector<mlir::Value>{innerQubit};
+            });
+        return llvm::to_vector(innerResult);
+      });
+}
 } // namespace mlir::qco

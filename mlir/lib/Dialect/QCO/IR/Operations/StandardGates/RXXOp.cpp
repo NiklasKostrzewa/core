@@ -8,18 +8,19 @@
  * Licensed under the MIT License
  */
 
-#include "mlir/Dialect/QCO/IR/QCODialect.h"
+#include "mlir/Dialect/QCO/IR/QCOOps.h"
 #include "mlir/Dialect/QCO/QCOUtils.h"
 #include "mlir/Dialect/Utils/Utils.h"
 
 #include <Eigen/Core>
-#include <cmath>
-#include <complex>
 #include <mlir/IR/Builders.h>
 #include <mlir/IR/MLIRContext.h>
 #include <mlir/IR/OperationSupport.h>
 #include <mlir/IR/PatternMatch.h>
 #include <mlir/Support/LogicalResult.h>
+
+#include <cmath>
+#include <complex>
 #include <optional>
 #include <variant>
 
@@ -39,6 +40,19 @@ struct MergeSubsequentRXX final : OpRewritePattern<RXXOp> {
   LogicalResult matchAndRewrite(RXXOp op,
                                 PatternRewriter& rewriter) const override {
     return mergeTwoTargetOneParameter(op, rewriter);
+  }
+};
+
+/**
+ * @brief Merge subsequent RXX operations with swapped targets by adding their
+ * angles.
+ */
+struct MergeSwappedTargetsRXX final : OpRewritePattern<RXXOp> {
+  using OpRewritePattern::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(RXXOp op,
+                                PatternRewriter& rewriter) const override {
+    return mergeTwoTargetOneParameterWithSwappedTargets(op, rewriter);
   }
 };
 
@@ -66,7 +80,8 @@ void RXXOp::build(OpBuilder& odsBuilder, OperationState& odsState,
 
 void RXXOp::getCanonicalizationPatterns(RewritePatternSet& results,
                                         MLIRContext* context) {
-  results.add<MergeSubsequentRXX, RemoveTrivialRXX>(context);
+  results.add<MergeSubsequentRXX, MergeSwappedTargetsRXX, RemoveTrivialRXX>(
+      context);
 }
 
 std::optional<Eigen::Matrix4cd> RXXOp::getUnitaryMatrix() {

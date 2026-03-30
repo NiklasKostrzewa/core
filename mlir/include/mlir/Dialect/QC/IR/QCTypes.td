@@ -12,6 +12,7 @@
 include "mlir/Dialect/QC/IR/QCDialect.td"
 
 include "mlir/IR/AttrTypeBase.td"
+include "mlir/IR/BuiltinTypeInterfaces.td"
 
 class QCType<string name, string typeMnemonic, list<Trait> traits = []>
     : TypeDef<QCDialect, name, traits> {

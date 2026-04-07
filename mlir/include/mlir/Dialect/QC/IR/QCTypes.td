@@ -22,11 +22,9 @@ class QCType<string name, string typeMnemonic, list<Trait> traits = []>
 def QubitType : QCType<"Qubit", "qubit", [MemRefElementTypeInterface]> {
   let summary = "QC qubit reference type";
   let description = [{
-        The `!qc.qubit` type represents a reference to a quantum bit in the
-        QC dialect. Operations using this type modify qubits in place using
-        reference semantics, similar to how classical imperative languages handle
-        mutable references.
-    }];
+    The `!qc.qubit` type represents a reference to a quantum bit in the QC dialect.
+    Operations using this type modify qubits in place using reference semantics, similar to how classical imperative languages handle mutable references.
+  }];
 }
 
 #endif // MLIR_DIALECT_QC_IR_QCTYPES_TD

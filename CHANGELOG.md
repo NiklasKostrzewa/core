@@ -11,8 +11,10 @@ This project adheres to [Semantic Versioning], with the exception that minor rel
 
 ### Added
 
+- ✨ Add a `merge-single-qubit-rotation-gates` pass for merging consecutive rotation gates using quaternions ([#1407]) ([**@J4MMlE**])
+- ✨ Add support for multi-controlled gates to ZX package ([#1380]) ([**@keefehuang**])
 - ✨ Add Sampler and Estimator Primitives to the QDMI-Qiskit Interface ([#1507]) ([**@marcelwa**])
-- ✨ Add conversions between Jeff and QCO ([#1479], [#1548], [#1565]) ([**@denialhaag**])
+- ✨ Add conversions between `jeff` and QCO ([#1479], [#1548], [#1565], [#1637]) ([**@denialhaag**])
 - ✨ Add a `place-and-route` pass for mapping circuits to architectures with restricted topologies ([#1537], [#1547], [#1568], [#1581], [#1583], [#1588]) ([**@MatthiasReumann**])
 - ✨ Add initial infrastructure for new QC and QCO MLIR dialects
   ([#1264], [#1330], [#1402], [#1428], [#1430], [#1436], [#1443], [#1446], [#1464], [#1465], [#1470], [#1471], [#1472], [#1474], [#1475], [#1506], [#1510], [#1513], [#1521], [#1542], [#1548], [#1550], [#1554], [#1567], [#1569], [#1570], [#1572], [#1573], [#1580], [#1602], [#1620], [#1623], [#1624], [#1626], [#1627], [#1635])
@@ -335,6 +337,7 @@ _📚 Refer to the [GitHub Release Notes](https://github.com/munich-quantum-tool
 
 <!-- PR links -->
 
+[#1637]: https://github.com/munich-quantum-toolkit/core/pull/1637
 [#1635]: https://github.com/munich-quantum-toolkit/core/pull/1635
 [#1627]: https://github.com/munich-quantum-toolkit/core/pull/1627
 [#1626]: https://github.com/munich-quantum-toolkit/core/pull/1626
@@ -394,6 +397,7 @@ _📚 Refer to the [GitHub Release Notes](https://github.com/munich-quantum-tool
 [#1413]: https://github.com/munich-quantum-toolkit/core/pull/1413
 [#1412]: https://github.com/munich-quantum-toolkit/core/pull/1412
 [#1411]: https://github.com/munich-quantum-toolkit/core/pull/1411
+[#1407]: https://github.com/munich-quantum-toolkit/core/pull/1407
 [#1406]: https://github.com/munich-quantum-toolkit/core/pull/1406
 [#1403]: https://github.com/munich-quantum-toolkit/core/pull/1403
 [#1402]: https://github.com/munich-quantum-toolkit/core/pull/1402
@@ -402,6 +406,7 @@ _📚 Refer to the [GitHub Release Notes](https://github.com/munich-quantum-tool
 [#1383]: https://github.com/munich-quantum-toolkit/core/pull/1383
 [#1382]: https://github.com/munich-quantum-toolkit/core/pull/1382
 [#1381]: https://github.com/munich-quantum-toolkit/core/pull/1381
+[#1380]: https://github.com/munich-quantum-toolkit/core/pull/1380
 [#1378]: https://github.com/munich-quantum-toolkit/core/pull/1378
 [#1375]: https://github.com/munich-quantum-toolkit/core/pull/1375
 [#1371]: https://github.com/munich-quantum-toolkit/core/pull/1371
@@ -550,6 +555,8 @@ _📚 Refer to the [GitHub Release Notes](https://github.com/munich-quantum-tool
 [**@lirem101**]: https://github.com/lirem101
 [**@Ectras**]: https://github.com/Ectras
 [**@simon1hofmann**]: https://github.com/simon1hofmann
+[**@keefehuang**]: https://github.com/keefehuang
+[**@J4MMlE**]: https://github.com/J4MMlE
 
 <!-- General links -->
 
